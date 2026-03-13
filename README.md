@@ -1,0 +1,1 @@
+# scispot-mcp-server
