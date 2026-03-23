@@ -18,10 +18,24 @@ The Scispot MCP Server is a remote Model Context Protocol (MCP) server that inte
 
 ## Setup
 
+### Claude web app (Anthropic MCP Directory)
+
+Use these steps when using **Claude in the browser** (claude.ai), not Claude Code.
+
 1. Visit the [Anthropic MCP Directory](https://claude.com/connectors)
 2. Find and connect to **Scispot**
 3. Complete OAuth authentication using your Scispot API key
 4. Start interacting with your workspace through Claude
+
+### Claude Code (terminal)
+
+From a terminal, register the remote MCP server with Claude Code using your Scispot API key:
+
+```bash
+claude mcp add scispot https://mcp.scispot.io/ --transport http --header "Authorization: Bearer YOUR_SCISPOT_API_KEY"
+```
+
+Replace `YOUR_SCISPOT_API_KEY` with your actual API key. Restart Claude Code or reload MCP configuration if prompted so the new server is picked up.
 
 ## Authentication
 
