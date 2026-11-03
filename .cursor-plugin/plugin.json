@@ -1,0 +1,35 @@
+{
+  "name": "scispot",
+  "displayName": "Scispot",
+  "version": "1.0.0",
+  "minClientVersions": {
+    "cursor": "3.13.0"
+  },
+  "description": "Query Labsheets, manage ELN experiments and protocols, and look up samples and inventory.",
+  "author": {
+    "name": "Scispot",
+    "email": "team@scispot.io"
+  },
+  "homepage": "https://docs.scispot.com/mcp-server",
+  "repository": "https://github.com/scispot-repo/scispot-mcp-server",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": [
+    "scispot",
+    "eln",
+    "lims",
+    "labsheets",
+    "lab-data",
+    "protocols",
+    "inventory",
+    "mcp"
+  ],
+  "category": "integrations",
+  "tags": [
+    "scispot",
+    "eln",
+    "mcp",
+    "lab-data"
+  ],
+  "mcpServers": "./mcp.json"
+}
