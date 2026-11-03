@@ -1,6 +1,50 @@
 # Scispot MCP Server
 
-Connect Claude to your Scispot lab workspace — query Labsheets, manage ELN experiments, protocols, documentation, storage locations, manifests, and more, all through natural language.
+Connect Claude, Cursor, or another MCP client to your Scispot lab workspace — query Labsheets, manage ELN experiments, protocols, documentation, storage locations, manifests, and more, all through natural language.
+
+## Use with Cursor
+
+This repository is also a [Cursor plugin](https://cursor.com/docs/reference/plugins). It connects Cursor's agent to Scispot's hosted MCP server at `https://mcp.scispot.io/` (streamable HTTP).
+
+### Install
+
+1. Open **Cursor Settings → Plugins**.
+2. Search for **Scispot** and click **Install**.
+3. When Cursor connects to the server, it opens the Scispot sign-in page in your browser. Sign in with your Scispot account to authorize the connection (OAuth). There is no API key to paste into Cursor.
+
+Or run `/add-plugin scispot` in chat.
+
+The plugin adds this MCP server:
+
+```json
+{
+  "mcpServers": {
+    "scispot": {
+      "type": "http",
+      "url": "https://mcp.scispot.io/"
+    }
+  }
+}
+```
+
+### Requirements
+
+- A Scispot account with Super Admin access, or an account with Dry Lab access.
+- Tool calls run with your Scispot permissions. The agent can see and change only what your account allows.
+
+### Example prompts
+
+- "List my Scispot Labsheets."
+- "Show the schema of the 'Cell Lines' Labsheet, then find rows where Status is 'Active'."
+- "List the protocols in the 'Genomics' Labspace and summarize the 'DNA Extraction SOP' protocol."
+- "Look up the manifest with barcode 'PLT-00142' and show which wells are filled."
+- "Create an experiment called 'Western Blot Optimization Round 3' in the 'Protein Lab' Labspace and add a summary of today's run."
+
+Start with a read-only request such as "List my Scispot Labsheets" to confirm the connection.
+
+### Write tools
+
+Some tools change data in your workspace: `add_labsheet_rows`, `update_labsheet_rows`, `create_*_stub`, `write_to_*`, and `link_labsheet_to_*`. `update_labsheet_rows` and the `write_to_*` tools overwrite or add content to existing records. Review each change the agent proposes before you approve the tool call.
 
 ## Description
 
@@ -24,12 +68,22 @@ Use these steps when using **Claude in the browser** (claude.ai), not Claude Cod
 
 1. Visit the [Anthropic MCP Directory](https://claude.com/connectors)
 2. Find and connect to **Scispot**
-3. Complete OAuth authentication using your Scispot API key
+3. Complete the OAuth sign-in with your Scispot account
 4. Start interacting with your workspace through Claude
 
 ### Claude Code (terminal)
 
-From a terminal, register the remote MCP server with Claude Code using your Scispot API key:
+Add the remote server, then sign in with OAuth:
+
+```bash
+claude mcp add scispot https://mcp.scispot.io/ --transport http
+```
+
+In Claude Code, run `/mcp`, select **scispot**, choose **Authenticate**, and sign in with your Scispot account.
+
+#### Alternative: API key header
+
+If your client can't complete the OAuth flow, you can pass a Scispot API key as a Bearer header instead:
 
 ```bash
 claude mcp add scispot https://mcp.scispot.io/ --transport http --header "Authorization: Bearer YOUR_SCISPOT_API_KEY"
@@ -39,9 +93,11 @@ Replace `YOUR_SCISPOT_API_KEY` with your actual API key. Restart Claude Code or 
 
 ## Authentication
 
-This server requires OAuth 2.0 authentication with PKCE (S256). During the connection flow:
+This server uses OAuth 2.0 with PKCE (S256). Clients that support remote MCP OAuth (Cursor, Claude, Claude Code) discover the authorization server from `https://mcp.scispot.io/.well-known/oauth-protected-resource`, register through dynamic client registration, and open the Scispot sign-in page. Sign in with your Scispot account to authorize the connection.
 
-- You will be prompted to provide your **Scispot API key** as the client secret
+During the connection flow:
+
+- If the authorization page asks for it, provide your **Scispot API key** as the client secret
 - The API key is used solely as a Bearer token for Scispot API requests
 - No credentials are persisted to permanent storage on the server
 - Authorization codes expire within 5 minutes
