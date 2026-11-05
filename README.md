@@ -44,11 +44,17 @@ Start with a read-only request such as "List my Scispot Labsheets" to confirm th
 
 ### Write tools
 
-Some tools change data in your workspace: `add_labsheet_rows`, `update_labsheet_rows`, `create_*_stub`, `write_to_*`, and `link_labsheet_to_*`. `update_labsheet_rows` and the `write_to_*` tools overwrite or add content to existing records. Review each change the agent proposes before you approve the tool call.
+Start with read-only requests. Review the data and the planned action before you approve a write.
+
+For important records, ask the agent to summarize the proposed changes before it creates or updates data. Review the resulting record in Scispot after the action completes.
+
+Eight tools are marked destructive because they overwrite existing rows or page content: `update_labsheet_rows`, `update_labsheet_rows_by_id_column`, `write_to_experiment`, `write_to_protocol`, `write_to_documentation`, and `link_manifest_to_*` (when `position` is `replace`).
+
+For regulated workflows, make sure your use of Cursor and its data handling meets your organization's validation, review, and approval requirements.
 
 ## Description
 
-The Scispot MCP Server is a remote Model Context Protocol (MCP) server that integrates [Scispot](https://www.scispot.com)'s Lab Operating System with AI assistants like Claude. It provides 27 tools spanning Labsheet data management, Electronic Lab Notebook (ELN) operations, inventory/storage lookups, and Labflow sample tracking. The server runs as an AWS Lambda function and authenticates via OAuth 2.0 with PKCE.
+The Scispot MCP Server is a remote Model Context Protocol (MCP) server that integrates [Scispot](https://www.scispot.com)'s Lab Operating System with AI assistants like Claude. It provides 55 tools spanning Labsheet data management, Electronic Lab Notebook (ELN) operations, inventory/storage lookups, Labflow sample tracking, and Jazz apps. The server runs as an AWS Lambda function and authenticates via OAuth 2.0 with PKCE.
 
 ## Features
 
@@ -58,51 +64,98 @@ The Scispot MCP Server is a remote Model Context Protocol (MCP) server that inte
 - **ELN Documentation** — List, read, create, and write to documentation entries; link Labsheet rows.
 - **Storage & Inventory** — Browse storage locations (freezers, rooms, cabinets) and fetch manifests (plates, boxes, racks) by ID or barcode.
 - **Labflows** — List sample UUIDs associated with a Labflow for downstream analysis.
-- **Labspaces** — Discover all available Labspaces as the entry point for ELN navigation.
+- **Labspaces** — Discover Labspaces and folders, and create folders for ELN pages.
+- **Tags** — List tag categories, search tag values, and set tags on ELN pages.
+- **Jazz apps** — Read the build guide, then list, create, upload, publish, and roll back custom Jazz apps.
 
 ## Setup
 
-### Claude web app (Anthropic MCP Directory)
+### Choose MCP or the REST API
 
-Use these steps when using **Claude in the browser** (claude.ai), not Claude Code.
+Use the MCP Server when you want an AI assistant to work with Scispot conversationally. Use the REST API when you build a programmatic integration or automation.
 
-1. Visit the [Anthropic MCP Directory](https://claude.com/connectors)
-2. Find and connect to **Scispot**
-3. Complete the OAuth sign-in with your Scispot account
-4. Start interacting with your workspace through Claude
+### Before you begin
 
-### Claude Code (terminal)
+You need:
 
-Add the remote server, then sign in with OAuth:
+- A Super Admin Scispot account, or an account with Dry Lab access
+- An MCP-compatible AI client
+
+The MCP Server uses `https://mcp.scispot.io`.
+
+### Security and permissions
+
+The MCP Server respects your existing Scispot permissions. You can access only the data and actions that your Scispot account allows.
+
+Web connectors use OAuth. Sign in with your Scispot account when the client asks you to authorize the connection.
+
+### Connect Claude.ai
+
+Use Claude.ai's custom connector flow. Sign in with your Scispot account when prompted.
+
+1. In Claude.ai, open **Settings**, then **Connectors**. Select **Add custom connector**.
+2. Search for **Scispot.io** in the connector search bar.
+3. Click **Connect to Claude**.
+4. Complete authentication by logging in with your Scispot account.
+
+Test the connection with a read-only request such as: "List my Scispot Labsheets."
+
+### Connect Claude Code
+
+Claude Code supports remote MCP servers over HTTP. Add Scispot as an HTTP MCP server, then authenticate in the client.
+
+1. In your terminal, run:
 
 ```bash
-claude mcp add scispot https://mcp.scispot.io/ --transport http
+claude mcp add --transport http scispot-mcp https://mcp.scispot.io/
 ```
 
-In Claude Code, run `/mcp`, select **scispot**, choose **Authenticate**, and sign in with your Scispot account.
+2. Open Claude Code with the `claude` command.
+3. Enter `/mcp` to check your MCP connections.
+4. Select the **scispot-mcp** connection, choose **Authenticate**, and log in with your Scispot account.
+5. Start or restart Claude Code. Ask it to list your Scispot Labsheets to confirm that it can discover the server tools.
 
-#### Alternative: API key header
+Test the connection with a read-only request such as: "List my Scispot Labsheets."
 
-If your client can't complete the OAuth flow, you can pass a Scispot API key as a Bearer header instead:
+### Connect another MCP-compatible client
 
-```bash
-claude mcp add scispot https://mcp.scispot.io/ --transport http --header "Authorization: Bearer YOUR_SCISPOT_API_KEY"
-```
+You can connect other clients that support remote HTTP MCP servers. The exact labels vary by client.
 
-Replace `YOUR_SCISPOT_API_KEY` with your actual API key. Restart Claude Code or reload MCP configuration if prompted so the new server is picked up.
+1. Add a remote MCP server or connector in your client.
+2. Set the connection URL to `https://mcp.scispot.io`.
+3. Choose OAuth when your client supports the Scispot OAuth flow.
+4. When prompted, log in with your Scispot account.
+5. Confirm the connection with a read-only request before you perform a write operation.
 
-## Authentication
+Contact Customer Success at [cs@scispot.io](mailto:cs@scispot.io) if your client cannot complete the OAuth flow or does not support custom HTTP headers.
 
-This server uses OAuth 2.0 with PKCE (S256). Clients that support remote MCP OAuth (Cursor, Claude, Claude Code) discover the authorization server from `https://mcp.scispot.io/.well-known/oauth-protected-resource`, register through dynamic client registration, and open the Scispot sign-in page. Sign in with your Scispot account to authorize the connection.
+### Use write actions safely
 
-During the connection flow:
+Start with read-only requests. Review the data and the planned action before you approve a write.
 
-- If the authorization page asks for it, provide your **Scispot API key** as the client secret
-- The API key is used solely as a Bearer token for Scispot API requests
-- No credentials are persisted to permanent storage on the server
-- Authorization codes expire within 5 minutes
+For important records, ask the AI to summarize the proposed changes before it creates or updates data. Review the resulting record in Scispot after the action completes.
 
-You need a valid Scispot account with API access. Contact your Scispot administrator if you need an API key.
+Tools that change data require the same permissions as the equivalent action in Scispot. Eight tools are marked destructive because they overwrite existing rows or page content: `update_labsheet_rows`, `update_labsheet_rows_by_id_column`, `write_to_experiment`, `write_to_protocol`, `write_to_documentation`, and `link_manifest_to_*` (when `position` is `replace`).
+
+For regulated workflows, make sure your use of the AI client and its data handling meets your organization's validation, review, and approval requirements.
+
+## Troubleshooting
+
+### You cannot add the connector
+
+Verify that you entered `https://mcp.scispot.io` exactly.
+
+### Authentication fails
+
+Contact Customer Success at [cs@scispot.io](mailto:cs@scispot.io) if you cannot authenticate.
+
+### You cannot see data or perform an action
+
+The MCP Server uses your Scispot permissions. Confirm that you can complete the same action in Scispot with your account.
+
+### The AI proposes an unexpected change
+
+Do not approve the action. Ask the AI to explain the proposed change, then verify the target records in Scispot before you continue.
 
 ## Examples
 
@@ -157,40 +210,70 @@ You need a valid Scispot account with API access. Contact your Scispot administr
 
 ## Available Tools
 
-### Read-Only Tools (16)
+Tools below match the production server at `https://mcp.scispot.io/` (55 tools). Destructive follows the server's `destructiveHint`: those calls can overwrite existing rows or page content.
+
+### Read-Only Tools (27)
 | Tool | Description |
 |------|-------------|
 | `list_labsheets` | List all Labsheets in the workspace |
 | `get_labsheet_schema` | Get column definitions for a Labsheet |
 | `search_labsheet_rows` | Search and filter Labsheet rows |
 | `get_labsheet_row` | Fetch a single row by UUID |
-| `list_labsheet_folders` | List folders or Labsheets within a folder |
+| `get_labsheet_row_by_id` | Fetch a single row by its ID column value |
+| `list_labsheet_folders` | List Labsheet folders, or the Labsheets in a folder |
+| `get_image_thumbnail` | Download a row's image thumbnail |
 | `list_labspaces` | List all ELN Labspaces |
-| `list_experiments` | List experiments in a location |
+| `get_labspace` | Fetch a Labspace by name |
+| `get_labspace_folder` | Fetch an ELN folder by name or UUID |
+| `list_experiments` | List experiments in a folder or location |
+| `list_experiment_page_templates` | List experiment templates available when creating an experiment |
 | `get_experiment` | Fetch full experiment content |
-| `list_protocols` | List protocols in a location |
+| `list_protocols` | List protocols in a folder or location |
+| `list_protocol_page_templates` | List protocol templates available when creating a protocol |
 | `get_protocol` | Fetch full protocol content |
-| `list_documentations` | List documentation entries in a location |
+| `list_documentations` | List documentation entries in a folder or location |
+| `list_documentation_page_templates` | List documentation templates available when creating an entry |
 | `get_documentation` | Fetch full documentation content |
+| `list_tag_categories` | List tag categories used on ELN pages and templates |
+| `search_tags` | Search tag values across categories |
 | `list_locations` | List root-level storage locations |
 | `get_manifest` | Fetch a manifest by hrid, uuid, or barcode |
 | `list_labflow_samples` | List sample UUIDs for a Labflow |
-| `get_image_thumbnail` | Download a row's image thumbnail |
+| `get_jazz_guide` | Read the guide for building a Jazz app |
+| `list_jazz_apps` | List Jazz apps in the workspace |
+| `list_jazz_app_versions` | List versions of a Jazz app |
 
-### Write Tools (11)
+### Write Tools (28)
 | Tool | Destructive | Description |
 |------|-------------|-------------|
+| `create_labsheet` | No | Create a Labsheet with columns |
+| `create_labsheet_column` | No | Add a column to a Labsheet |
+| `rename_labsheet_column` | No | Rename a Labsheet column |
 | `add_labsheet_rows` | No | Add new rows to a Labsheet |
 | `update_labsheet_rows` | Yes | Overwrite existing row values |
-| `create_experiment_stub` | No | Create an empty experiment |
-| `write_to_experiment` | Yes | Append/prepend content to an experiment |
-| `create_protocol_stub` | No | Create an empty protocol |
-| `write_to_protocol` | Yes | Write text, structured JSON, or images to a protocol |
-| `create_documentation_stub` | No | Create an empty documentation entry |
-| `write_to_documentation` | Yes | Append/prepend content to documentation |
+| `update_labsheet_rows_by_id_column` | Yes | Update existing rows by their ID column |
+| `create_labspace_folder` | No | Create an ELN folder under a Labspace or parent folder |
+| `create_experiment_stub` | No | Create an experiment, optionally from a template |
+| `write_to_experiment` | Yes | Write text, structured JSON, or images to an experiment |
 | `link_labsheet_to_experiment` | No | Link Labsheet rows to an experiment |
+| `link_manifest_to_experiment` | Yes | Link a manifest to an experiment; `position=replace` can overwrite the page |
+| `create_protocol_stub` | No | Create a protocol, optionally from a template |
+| `write_to_protocol` | Yes | Write text, structured JSON, or images to a protocol |
 | `link_labsheet_to_protocol` | No | Link Labsheet rows to a protocol |
+| `link_manifest_to_protocol` | Yes | Link a manifest to a protocol; `position=replace` can overwrite the page |
+| `create_documentation_stub` | No | Create a documentation entry, optionally from a template |
+| `write_to_documentation` | Yes | Write text, structured JSON, or images to documentation |
 | `link_labsheet_to_documentation` | No | Link Labsheet rows to documentation |
+| `link_manifest_to_documentation` | Yes | Link a manifest to documentation; `position=replace` can overwrite the page |
+| `upload_labspace_image` | No | Upload an image (up to 5 MiB) for an ELN page |
+| `request_large_file_upload` | No | Prepare an upload for a file between 5 MiB and 100 MiB |
+| `attach_uploaded_image_to_labspace_page` | No | Embed an uploaded image in an experiment, protocol, or documentation page |
+| `set_page_tags` | No | Replace the tags on an ELN page |
+| `create_jazz_app` | No | Create a Jazz app and return its upload form |
+| `upload_jazz_app_content` | No | Return a presigned form for uploading built Jazz app files |
+| `publish_jazz_app_version` | No | Make an uploaded Jazz app version the live one |
+| `rollback_jazz_app` | No | Point a Jazz app back at a previously published version |
+| `create_jazz_dev_session` | No | Mint a short-lived session for exercising a Jazz app |
 
 ## Privacy Policy
 
